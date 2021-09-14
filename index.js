@@ -26,17 +26,22 @@ for (const file of commandFiles) {
 const modlog = "885652246988218449";
 
 client.once('ready', () => {
+	//once ready,  choose random artist from the artist list
 	let artistpick = artists[Math.floor(Math.random()*artists.length)]
+	//set status as listening to selected artist
 	client.user.setActivity(artistpick, { type: 'LISTENING' });
 	console.log('MoyaiBot ready!');
 	const currentTime = new Date();
 
+
+	//periodically change the artist the bot is "listening" to 
 	setInterval(() => {
 		artistpick = artists[Math.floor(Math.random()*artists.length)]
 		client.user.setActivity(artistpick, { type: 'LISTENING' });
 	}, 5*60*1000);
 });
 client.on('interactionCreate', async interaction => {
+	//check if users interaction was a command
 	if (!interaction.isCommand()) return;
 
 	const command = client.commands.get(interaction.commandName);

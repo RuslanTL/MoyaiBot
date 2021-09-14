@@ -1,5 +1,4 @@
 
-
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('util').promisify(setTimeout);        
 const fs = require("fs")
@@ -7,16 +6,19 @@ const Discord = require('discord.js');
 const files = fs.readdirSync('commands/albums')
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('rec')
+        .setName('albumrec')
         .setDescription('recommends a random album'),
     async execute(interaction) {
-
-
+        //chose random album from the folder
         let chosen = files[Math.floor(Math.random() * files.length)] 
         let buffer= fs.readFileSync(`commands/albums/${chosen}`);
+
+        //read metadata of image
         let parser = require('exif-parser').create(buffer);
         let result = parser.parse();
         console.log(result);
+
+        //generate random ratings
         let randRatings = (Math.random()*10).toPrecision(2);
         let rec = "";
         if(randRatings<2){
@@ -35,6 +37,7 @@ module.exports = {
             rec = " really"
         } else rec = " **REALLY REALLY**";
 
+        //create embed
         let albumName = new Discord.MessageEmbed().setTitle(`I${rec} recommend you to listen to **${result.tags['ImageDescription']}**`).setFooter(`I rate this album ${randRatings}/10`);
         await interaction.deferReply();
         await wait(300);
