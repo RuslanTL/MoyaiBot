@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "@discordjs/rest": "^0.1.0-canary.0",
+    "chalk": "^4.1.2",
+    "discord-api-types": "^0.23.1",
+    "discord.js": "^13.1.0",
+    "exif-parser": "^0.1.12",
+    "g-i-s": "^2.1.6",
+    "image-search-engine": "^1.2.0",
+    "jimp": "^0.16.1",
+    "reverse-image-search-google": "^1.0.3"
+  }
+}
