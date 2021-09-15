@@ -1,13 +1,19 @@
 {
   "dependencies": {
+    "@discordjs/opus": "^0.5.3",
     "@discordjs/rest": "^0.1.0-canary.0",
+    "@discordjs/voice": "^0.6.0",
     "chalk": "^4.1.2",
     "discord-api-types": "^0.23.1",
     "discord.js": "^13.1.0",
     "exif-parser": "^0.1.12",
+    "ffmpeg": "^0.0.4",
+    "ffmpeg-static": "^4.4.0",
     "g-i-s": "^2.1.6",
     "image-search-engine": "^1.2.0",
     "jimp": "^0.16.1",
-    "reverse-image-search-google": "^1.0.3"
+    "libsodium-wrappers": "^0.7.9",
+    "reverse-image-search-google": "^1.0.3",
+    "ytdl-core": "^4.9.1"
   }
 }

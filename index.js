@@ -10,7 +10,6 @@ const client = new Client({
 client.commands = new Collection();
 
 
-
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 let artistlist = fs.readFileSync('./tracklist.txt', {encoding:'utf8', flag:'r'})
 let artists = artistlist.split(", ")
@@ -39,6 +38,9 @@ client.once('ready', () => {
 		artistpick = artists[Math.floor(Math.random()*artists.length)]
 		client.user.setActivity(artistpick, { type: 'LISTENING' });
 	}, 5*60*1000);
+	setInterval(() => {
+		client.channels.cache.get(modlog).send('<@&885637749619687465> its time to bump')
+	}, 125*60*1000);
 });
 client.on('interactionCreate', async interaction => {
 	//check if users interaction was a command
