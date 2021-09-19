@@ -1,4 +1,3 @@
-const ytdl = require('ytdl-core');
 const path = require('path');
 const {
     AudioPlayerStatus,
@@ -8,10 +7,12 @@ const {
     joinVoiceChannel,
 } = require('@discordjs/voice');
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { generateDependencyReport } = require('@discordjs/voice');
+
 
 const { Client, Intents, Collection } = require('discord.js');
 const client = new Client({
-    intents:	[Intents.FLAGS.GUILD_VOICE_STATES] 
+    intents:	[Intents.FLAGS.GUILD_VOICE_STATES,Intents.FLAGS.GUILDS] 
 });
 
 module.exports = {
@@ -19,9 +20,10 @@ module.exports = {
         .setName('join')
         .setDescription('join voice channel'),
   async execute(interaction) {
-        voiceChannel = interaction.member.voice.channel;
-        guild = interaction.member.guild;
-        const connection = joinVoiceChannel({
+        console.log(generateDependencyReport());
+        const voiceChannel = interaction.member.voice.channel;
+        const guild = interaction.member.guild;
+        const connection = joinVoiceChannel({ 
             channelId: voiceChannel.id,
             guildId: guild.id,
             adapterCreator: guild.voiceAdapterCreator,
@@ -31,7 +33,7 @@ module.exports = {
         connection.subscribe(player);
         player.play(resource);
         interaction.reply("joined!")
-        console.log(player)
+        console.log(player);
         player.on(AudioPlayerStatus.Idle, () => connection.destroy());
     }
 };
