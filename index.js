@@ -29,6 +29,7 @@ const MCgeneral = "885637180884676721";
 let messagedata = [];
 let isMarkov = false;
 
+const splash = fs.readFileSync('./splash.txt',{encoding:'utf8', flag:'r'})
 //this is the message cooldown for the bot's random messages (currently only "currently listening artist" as seen on line 61)
 //it decreases the more people chat and increases when there hasn't been activity in the channel for a while, to prevent it from spamming during inactive times
 let messagetime = 60; //minutes
@@ -41,8 +42,10 @@ client.once('ready', () => {
 	let artistpick = artists[Math.floor(Math.random()*artists.length)]
 	//set status as listening to selected artist
 	client.user.setActivity(artistpick, { type: 'LISTENING' });
-	console.log('MoyaiBot ready!');
 	const currentTime = new Date();
+	console.log(chalk.black.bgWhite(splash));
+	console.log(chalk.white('by desmond and capn'));
+	console.log(chalk.blue.bgWhite('MoyaiBot ready!') + ' | ' + `at ` + chalk.green(`${currentTime}`));
 	let artistImage = new Discord.MessageEmbed().setTitle(`I am currently listening to: **__${artistpick}!__** What is your opinion on this artist?`).setFooter("🗿 Yours truly, MoyaiBot 🗿");
 	client.channels.cache.get(MCgeneral).send({embeds: [artistImage]})
 	//periodically change the artist the bot is "listening" to 
@@ -59,8 +62,7 @@ client.once('ready', () => {
 	setInterval(() =>{
 		if(messagetime <= upperlimit){
 			messagetime += 1;
-			console.log(`random message cooldown: ${messagetime} `);
-			console.log(`upper limit: ${upperlimit}`);
+			console.log(chalk.red(`random message cooldown: ${messagetime} `) + chalk.redBright(`upper limit: ${upperlimit} `));
 		}
 	}, 2*60*1000)
 
@@ -80,8 +82,7 @@ client.on('messageCreate', async message =>{
 		if(messagetime >= 10){
 			messagetime -= 1;
 		}
-		console.log(`random message cooldown: ${messagetime} `);
-		console.log(`upper limit: ${upperlimit}`);
+		console.log(chalk.red(`random message cooldown: ${messagetime} `) + chalk.redBright(`upper limit: ${upperlimit} `));
 		if(message.content.startsWith("m!")){
 			if(message.content.includes("markov")){
 				if(isMarkov == false){
