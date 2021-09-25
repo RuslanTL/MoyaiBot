@@ -35,9 +35,9 @@ module.exports = {
                 username: target.username,
                 avatarURL: target.avatarURL(),
             });
+            await interaction.reply({ content: 'mimicked!', ephemeral: true });
         } catch (error) {
             console.error('lol error: ', error);
-            await interaction.reply({ content: 'mimicked!', ephemeral: true });
         }
   },
 };
