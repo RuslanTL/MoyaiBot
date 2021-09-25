@@ -42,3 +42,8 @@ aa
 astrobrite
 %a
 astrobrite
+MOYAI
+COLLECTIVE
+#moyaibot-updates
+%wkt
+UwU
