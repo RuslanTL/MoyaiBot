@@ -32,6 +32,7 @@ let isMarkov = false;
 //this is the message cooldown for the bot's random messages (currently only "currently listening artist" as seen on line 61)
 //it decreases the more people chat and increases when there hasn't been activity in the channel for a while, to prevent it from spamming during inactive times
 let messagetime = 60; //minutes
+let upperlimit = 70; //upperlimit
 
 client.once('ready', () => {
 	messagetime = 60;
@@ -42,6 +43,8 @@ client.once('ready', () => {
 	client.user.setActivity(artistpick, { type: 'LISTENING' });
 	console.log('MoyaiBot ready!');
 	const currentTime = new Date();
+	let artistImage = new Discord.MessageEmbed().setTitle(`I am currently listening to: **__${artistpick}!__** What is your opinion on this artist?`).setFooter("🗿 Yours truly, MoyaiBot 🗿");
+	client.channels.cache.get(MCgeneral).send({embeds: [artistImage]})
 	//periodically change the artist the bot is "listening" to 
 	setInterval(() => {
 		artistpick = artists[Math.floor(Math.random()*artists.length)]
@@ -54,37 +57,42 @@ client.once('ready', () => {
 
 	//increasing cooldown when people aren't talking
 	setInterval(() =>{
-		if(messagetime <= 120){
+		if(messagetime <= upperlimit){
 			messagetime += 1;
 			console.log(`random message cooldown: ${messagetime} `);
+			console.log(`upper limit: ${upperlimit}`);
 		}
-	}, 1*60*1000)
+	}, 2*60*1000)
 
 	setInterval(() => {
         let artistImage = new Discord.MessageEmbed().setTitle(`I am currently listening to: **__${artistpick}!__** What is your opinion on this artist?`).setFooter("🗿 Yours truly, MoyaiBot 🗿");
 		client.channels.cache.get(MCgeneral).send({embeds: [artistImage]})
+		upperlimit += 10;
 	}, messagetime*60*1000)
 });
 client.on('messageCreate', async message =>{
 	//decreasing cooldown when people are talking
-	if(messagetime >= 10){
-		messagetime -= 1;
-	}
-	console.log(`random message cooldown: ${messagetime} `);
-	if(message.content.startsWith("m!")){
-		if(message.content.includes("markov")){
-			if(isMarkov == false){
-				isMarkov = true;
-				message.channel.send("markov activated!");
-			} else{
-				isMarkov = false;
-				message.channel.send("markov deactivated!");
-			}
-		}
-	}
+
 	//takes the message and splits it into an array. need to have it 
 	if(message.author.bot){return}
 	else{
+		upperlimit -= 10;
+		if(messagetime >= 10){
+			messagetime -= 1;
+		}
+		console.log(`random message cooldown: ${messagetime} `);
+		console.log(`upper limit: ${upperlimit}`);
+		if(message.content.startsWith("m!")){
+			if(message.content.includes("markov")){
+				if(isMarkov == false){
+					isMarkov = true;
+					message.channel.send("markov activated!");
+				} else{
+					isMarkov = false;
+					message.channel.send("markov deactivated!");
+				}
+			}
+		}
 		let words = message.content.split(' ').join('\n')
 		let log = fs.createWriteStream('messages.txt', {
 			flags: 'a' 
