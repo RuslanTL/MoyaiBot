@@ -18,26 +18,29 @@ module.exports = {
                 .setDescription('content of message')
                 .setRequired(true)),
   async execute(interaction) {
+        interaction.deferReply({ephemeral: true});
         const target = interaction.options.getUser('user');
         const chan= interaction.options.getChannel('chan');
         const content = interaction.options.getString('content');
         await chan.createWebhook('mimic_hook', {
-            avatar: 'https://i.imgur.com/AfFp7pu.png',
+            avatar: 'https://cdn.discordapp.com/attachments/660942732788891658/889879382477393940/image0.jpg',
         })
             .then(webhook => console.log(`Created webhook ${webhook}`))
             .catch(console.error);
         try {
             const webhooks = await chan.fetchWebhooks();
-            console.log(webhooks);
             const webhook = await webhooks.find(hook => hook.name = 'mimic_hook')
+            console.log(webhook);
             await webhook.send({
                 content: content,
                 username: target.username,
                 avatarURL: target.avatarURL(),
             });
-            await interaction.reply({ content: 'mimicked!', ephemeral: true });
+            webhook.delete('delete');
+
         } catch (error) {
             console.error('lol error: ', error);
         }
+        await interaction.editReply({ content: `mimicked!`, ephemeral: true });
   },
 };
