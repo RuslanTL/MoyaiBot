@@ -58,4 +58,5 @@ client.on('interactionCreate', async interaction => {
 	}
 });
 
+//poop
 client.login(token);
