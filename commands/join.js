@@ -8,7 +8,7 @@ const {
 } = require('@discordjs/voice');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { generateDependencyReport } = require('@discordjs/voice');
-
+const wait = require('util').promisify(setTimeout);
 
 const { Client, Intents, Collection } = require('discord.js');
 const client = new Client({
@@ -28,6 +28,7 @@ module.exports = {
             guildId: guild.id,
             adapterCreator: guild.voiceAdapterCreator,
         });
+        await wait(500);
         const resource = createAudioResource(path.resolve('commands/audiotest/resonance.mp3'));
         const player = createAudioPlayer();
         connection.subscribe(player);
