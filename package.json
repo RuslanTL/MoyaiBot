@@ -13,6 +13,7 @@
     "image-search-engine": "^1.2.0",
     "jimp": "^0.16.1",
     "libsodium-wrappers": "^0.7.9",
+    "markov-strings": "^3.0.1",
     "reverse-image-search-google": "^1.0.3",
     "ytdl-core": "^4.9.1"
   }
