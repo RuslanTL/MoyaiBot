@@ -10,13 +10,23 @@ module.exports = {
         .setDescription('get avatar of user')
         .addUserOption(option =>
             option.setName('user')
-                .setDescription('the user')
-                .setRequired(true)
-        ),
+                .setDescription('the user (defaults to author)')
+                .setRequired(false))
+        .addIntegerOption(option =>
+            option.setName("resolution")
+                .setDescription('resolution of image (128,256,512,1024,2048), defaults to 512')
+                .setRequired(false)),        
   async execute(interaction) {
       await interaction.deferReply();
-      const target = interaction.options.getUser('user');
-      const file = new MessageAttachment(target.displayAvatarURL({format : "jpg", size : 512}));
+      let target = interaction.options.getUser('user');
+      if(target == undefined){
+          target = interaction.member.user;
+      }
+      let size = interaction.options.getInteger('resolution')
+      if(size == undefined){
+          size = 512;
+      }
+      const file = new MessageAttachment(target.displayAvatarURL({format : "jpg", size : size}));
       await wait(300);
       await interaction.editReply({files:[file]});
   },
