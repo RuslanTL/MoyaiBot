@@ -31,6 +31,7 @@ const MC = "885637180339408968";
 
 let messagedata = [];
 let isMarkov = false;
+let markov_probability = 5;
 
 let messagecount = 0;
 
@@ -69,6 +70,12 @@ client.on('messageCreate', async message =>{
 				message.channel.send("markov deactivated!");
 			}
 		}
+		if(message.content.includes("prob")){
+			let args = message.content.split(' ')[1];
+			console.log(`args: ${args}`);
+			markov_probability = args;
+			message.channel.send(`probability set to ${markov_probability}!`)
+		}
 	}
 	//takes the message and splits it into an array.
 	if(message.guildId == MC&& message.channelId != "890349764514832394" && message.channelId != "885646595889180733"){
@@ -98,32 +105,38 @@ client.on('messageCreate', async message =>{
 		console.log(messagedata);
 		markov.import(JSON.parse(fs.readFileSync('./markovcorpus.txt',{encoding:'utf8', flag:'r'})))
 		markov.addData(messagedata)
-		console.log(markov.corpus);
 		fs.writeFile('markovcorpus.txt', JSON.stringify(markov.export()), (err) => {
 			if (err) throw err;
 		});
-
-		const options = {
+		let randlength = Math.floor(Math.random()*20)
+		let randref = Math.ceil(Math.random()*5);
+		const options = {	
 			maxTries: 500, // Give up if I don't have a sentence after 20 tries (default is 10)
 			prng: Math.random, // Default value if left empty
 			// You'll often need to manually filter raw results to get something that fits your needs.
 			filter: (result) => {
-			   return result.string.split(' ').length >= 2
+			   return result.string.split(' ').length >= randlength && result.refs.length > randref;
 			}
 		}
 		if(isMarkov){
-			try{	
-				const result = await markov.generate(options);
-				console.log(result);
-				message.channel.send(result.string);
-				if(message.mentions.users.has(message.client.user)){
-					
+			let markov_pick = Math.floor(Math.random()*100)
+			console.log(chalk.yellowBright(`markov pick: ${markov_pick}, markov probability: ${markov_probability}`));
+			if(markov_pick <= markov_probability){
+				try{	
+			
+					const result = await markov.generate(options);
+					console.log(result);
+					console.log(chalk.blueBright(`min length: ${randlength}, min ref amount: ${randref}`));
+					message.channel.send(result.string);
+					if(message.mentions.users.has(message.client.user)){
+						
+					}
+	
 				}
-
-			}
-			catch(error){
-				console.log(error);
-				message.channel.send("error!!!! :(");
+				catch(error){
+					console.log(error);
+					message.channel.send("error!!!! :(");
+				}
 			}
 		}
 	}
