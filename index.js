@@ -16,7 +16,7 @@ const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('
 let artistlist = fs.readFileSync('./tracklist.txt', {encoding:'utf8', flag:'r'})
 let artists = artistlist.split(", ")
 const markov = new Markov({ stateSize: 2 })
-
+const markov2 = new Markov({ stateSize: 2 })
 
 for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
@@ -28,12 +28,15 @@ const modlog = "885652246988218449";
 const MCgeneral = "885637180884676721";
 
 const MC = "885637180339408968";
+const MF = "580042590985125898"
 
 let messagedata = [];
 let isMarkov = false;
 let markov_probability = 5;
 
 let messagecount = 0;
+let artistpick;
+let markov_channel;
 
 const splash = fs.readFileSync('./splash.txt',{encoding:'utf8', flag:'r'})
 //this is the message cooldown for the bot's random messages (currently only "currently listening artist" as seen on line 61)
@@ -41,7 +44,7 @@ const splash = fs.readFileSync('./splash.txt',{encoding:'utf8', flag:'r'})
 
 client.once('ready', () => {
 	//once ready,  choose random artist from the artist list
-	let artistpick = artists[Math.floor(Math.random()*artists.length)]
+	artistpick = artists[Math.floor(Math.random()*artists.length)]
 	//set status as listening to selected artist
 	client.user.setActivity(artistpick, { type: 'LISTENING' });
 	const currentTime = new Date();
@@ -62,12 +65,15 @@ client.once('ready', () => {
 client.on('messageCreate', async message =>{
 	if(message.content.startsWith("m!")){
 		if(message.content.includes("markov")){
+			markov_channel = message.channelId;
 			if(isMarkov == false){
 				isMarkov = true;
-				message.channel.send("markov activated!");
+				client.channels.fetch(markov_channel)
+				.then(channel => channel.send("markov activated!"))
 			} else{
 				isMarkov = false;
-				message.channel.send("markov deactivated!");
+				client.channels.fetch(markov_channel)
+				.then(channel => channel.send("markov deactivated!"))
 			}
 		}
 		if(message.content.includes("prob")){
@@ -95,7 +101,7 @@ client.on('messageCreate', async message =>{
 			let attachURL = attach.url;
 			words += `\n${attachURL}`
 		}
-		console.log(words);
+		console.log(words + ` from ${message.guild}`);
 		let log = fs.createWriteStream('messages.txt', {
 			flags: 'w' 
 			})
@@ -103,35 +109,49 @@ client.on('messageCreate', async message =>{
 		let messagestream = fs.readFileSync('./messages.txt', {encoding:'utf8', flag:'r'});
 		messagedata = messagestream.split('\n')
 		console.log(messagedata);
-		markov.import(JSON.parse(fs.readFileSync('./markovcorpus.txt',{encoding:'utf8', flag:'r'})))
+		let backup = fs.readFileSync('./markovbackup.txt',{encoding:'utf8', flag:'r'});
+		let importdata = fs.readFileSync('./markovcorpus.txt',{encoding:'utf8', flag:'r'});
+		fs.writeFile('markovbackup.txt', backup, (err) => {
+			if (err) throw err;
+		});
+		try{
+			markov.import(JSON.parse(importdata))
+			fs.writeFile('markovbackup.txt', importdata, (err) => {
+				if (err) throw err;
+			});
+		} catch(err){
+			console.log("error while getting corpus, using backup")
+			message.channel.send("error while getting corpus, using backup")
+			markov.import(JSON.parse(backup));
+			fs.writeFile('markovcorpus.txt', backup, (err) => {
+				if (err) throw err;
+			});
+		}
 		markov.addData(messagedata)
 		fs.writeFile('markovcorpus.txt', JSON.stringify(markov.export()), (err) => {
 			if (err) throw err;
 		});
-		let randlength = Math.floor(Math.random()*20)
-		let randref = Math.ceil(Math.random()*5);
+		let randlength = Math.floor(Math.random()*8)
+		let randref = Math.ceil(Math.random()*3);
+		markov_channel = message.channelId;
 		const options = {	
-			maxTries: 500, // Give up if I don't have a sentence after 20 tries (default is 10)
+			maxTries: 1000, // Give up if I don't have a sentence after 20 tries (default is 10)
 			prng: Math.random, // Default value if left empty
 			// You'll often need to manually filter raw results to get something that fits your needs.
 			filter: (result) => {
-			   return result.string.split(' ').length >= randlength && result.refs.length > randref;
+				return result.string.split(' ').length >= randlength && result.refs.length > randref;
 			}
 		}
 		if(isMarkov){
 			let markov_pick = Math.floor(Math.random()*100)
-			console.log(chalk.yellowBright(`markov pick: ${markov_pick}, markov probability: ${markov_probability}`));
+			console.log(chalk.yellowBright(`markov pick: ${markov_pick}, markov probability: ${markov_probability} from collective`));
 			if(markov_pick <= markov_probability){
-				try{	
-			
+				try{
 					const result = await markov.generate(options);
 					console.log(result);
 					console.log(chalk.blueBright(`min length: ${randlength}, min ref amount: ${randref}`));
-					message.channel.send(result.string);
-					if(message.mentions.users.has(message.client.user)){
-						
-					}
-	
+					client.channels.fetch(markov_channel)
+					.then(channel => channel.send(result.string))
 				}
 				catch(error){
 					console.log(error);
@@ -140,7 +160,73 @@ client.on('messageCreate', async message =>{
 			}
 		}
 	}
-	
+	if(message.guildId == MF){
+		if(message.author.bot){return}
+		let words = message.content
+		let attach = message.attachments.first();
+		if(attach != undefined){
+			let attachURL = attach.url;
+			words += `\n${attachURL}`
+		}
+		console.log(words + ` from ${message.guild}`);
+		let log = fs.createWriteStream('messages2.txt', {
+			flags: 'w' 
+			})
+		log.write(words + '\n');
+		let messagestream = fs.readFileSync('./messages2.txt', {encoding:'utf8', flag:'r'});
+		messagedata = messagestream.split('\n')
+		console.log(messagedata);
+		let backup2 = fs.readFileSync('./markovbackup2.txt',{encoding:'utf8', flag:'r'});
+		let importdata2 = fs.readFileSync('./markovcorpus2.txt',{encoding:'utf8', flag:'r'});
+		fs.writeFile('markovbackup2.txt', backup2, (err) => {
+			if (err) throw err;
+		});
+		try{
+			markov2.import(JSON.parse(importdata2))
+			fs.writeFile('markovbackup2.txt', importdata2, (err) => {
+				if (err) throw err;
+			});
+		} catch(err){
+			console.log("error while getting corpus, using backup")
+			message.channel.send("error while getting corpus, using backup")
+			markov2.import(JSON.parse(backup2));
+			fs.writeFile('markovcorpus2.txt', backup2, (err) => {
+				if (err) throw err;
+			});
+		}
+		markov2.addData(messagedata)
+		fs.writeFile('markovcorpus2.txt', JSON.stringify(markov2.export()), (err) => {
+			if (err) throw err;
+		});
+		let randlength = Math.floor(Math.random()*20)
+		let randref = Math.ceil(Math.random()*5);
+		const options = {	
+			maxTries: 1000, // Give up if I don't have a sentence after 20 tries (default is 10)
+			prng: Math.random, // Default value if left empty
+			// You'll often need to manually filter raw results to get something that fits your needs.
+			filter: (result) => {
+				return result.string.split(' ').length >= randlength && result.refs.length > randref;
+			}
+		}
+		if(isMarkov){
+			let markov_pick = Math.floor(Math.random()*100)
+			console.log(chalk.yellowBright(`markov pick: ${markov_pick}, markov probability: ${markov_probability} from moyai`));
+			if(markov_pick <= markov_probability){
+				try{
+					const result = await markov2.generate(options);
+					console.log(result);
+					console.log(chalk.blueBright(`min length: ${randlength}, min ref amount: ${randref}`));
+					client.channels.fetch(markov_channel)
+					.then(channel => channel.send(result.string))
+				}
+				catch(error){
+					console.log(error);
+					message.channel.send("error!!!! :(");
+				}
+			}
+		}
+	}
+
 });
 client.on('interactionCreate', async interaction => {
 	//check if users interaction was a command

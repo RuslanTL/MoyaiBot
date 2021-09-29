@@ -13,6 +13,7 @@ module.exports = {
         .setName('artistrec')
         .setDescription('recommends an artist'),
     async execute(interaction) {
+      try{
         await interaction.deferReply();
         let pick = artists[Math.floor(Math.random()*artists.length)]
         console.log(pick);
@@ -33,5 +34,9 @@ module.exports = {
         console.log(artistImage);
         await wait(300);
         await interaction.editReply({embeds: [artistImage]});
+      }catch(err){
+        await interaction.Reply("error!");
+      }
+
     },
   };
