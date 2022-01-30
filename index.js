@@ -8,7 +8,8 @@ const chalk = require('chalk')
 const client = new Client({
 	 intents:	[Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] 
 	});
-const Markov = require('markov-strings').default
+const Markov = require('markov-strings').default;
+const { crypto_sign_PUBLICKEYBYTES } = require('libsodium-wrappers');
 client.commands = new Collection();
 
 
@@ -26,6 +27,7 @@ for (const file of commandFiles) {
 
 const modlog = "885652246988218449";
 const MCgeneral = "885637180884676721";
+const listens = "880127684955496488";
 
 const MC = "885637180339408968";
 const MF = "580042590985125898"
@@ -42,27 +44,53 @@ const splash = fs.readFileSync('./splash.txt',{encoding:'utf8', flag:'r'})
 //this is the message cooldown for the bot's random messages (currently only "currently listening artist" as seen on line 61)
 //it decreases the more people chat and increases when there hasn't been activity in the channel for a while, to prevent it from spamming during inactive times
 
+const bumphours = [0,2,4,6,8,10,12,14,16,18,20,22];
+let bumpoffset = 2;
+let bumpcooldown = false;
+
 client.once('ready', () => {
 	//once ready,  choose random artist from the artist list
 	artistpick = artists[Math.floor(Math.random()*artists.length)]
 	//set status as listening to selected artist
 	client.user.setActivity(artistpick, { type: 'LISTENING' });
+	client.channels.cache.get(listens).send(`i'm listening to ${artistpick}`)
 	const currentTime = new Date();
 	console.log(chalk.black.bgWhite(splash));
 	console.log(chalk.white('by desmond and capn'));
 	console.log(chalk.blue.bgWhite('MoyaiBot ready!') + ' | ' + `at ` + chalk.green(`${currentTime}`));
 	//periodically change the artist the bot is "listening" to 
 	setInterval(() => {
+		let importdata = fs.readFileSync('./markovcorpus.txt',{encoding:'utf8', flag:'r'});
 		artistpick = artists[Math.floor(Math.random()*artists.length)]
 		client.user.setActivity(artistpick, { type: 'LISTENING' });
+		console.log(`markov chain backed up!`);
+		fs.writeFile('markovbackup.txt', importdata, (err) => {
+			if (err) throw err;
+		});
 	}, 5*60*1000);
+	setInterval(() =>{
+		client.channels.cache.get(listens).send(`i'm listening to ${artistpick}`)
+	}, 20*60*1000)
+	// setInterval(() => {
+	// 	client.channels.cache.get(modlog).send('<@&885637749619687465> its time to bump')
+	// }, 125*60*1000);
+	setInterval(()=>{
+		let curTime = new Date();
+		if(bumphours.includes(curTime.getHours()) && curTime.getMinutes() == bumpoffset && !bumpcooldown){
+			client.channels.cache.get(modlog).send('<@&885637749619687465> its time to bump')
+			bumpcooldown = true;
+			if(bumpoffset > 58){
+				bumpoffset = 2;
+			}else{
+				bumpoffset += 2;
+			}
 
-	setInterval(() => {
-		client.channels.cache.get(modlog).send('<@&885637749619687465> its time to bump')
-	}, 125*60*1000);
+		}
+	},1*60*1000);
 
 });
 client.on('messageCreate', async message =>{
+
 	if(message.content.startsWith("m!")){
 		if(message.content.includes("markov")){
 			markov_channel = message.channelId;
@@ -111,20 +139,18 @@ client.on('messageCreate', async message =>{
 		console.log(messagedata);
 		let backup = fs.readFileSync('./markovbackup.txt',{encoding:'utf8', flag:'r'});
 		let importdata = fs.readFileSync('./markovcorpus.txt',{encoding:'utf8', flag:'r'});
-		fs.writeFile('markovbackup.txt', backup, (err) => {
-			if (err) throw err;
-		});
 		try{
 			markov.import(JSON.parse(importdata))
-			fs.writeFile('markovbackup.txt', importdata, (err) => {
-				if (err) throw err;
-			});
 		} catch(err){
 			console.log("error while getting corpus, using backup")
 			message.channel.send("error while getting corpus, using backup")
 			markov.import(JSON.parse(backup));
 			fs.writeFile('markovcorpus.txt', backup, (err) => {
-				if (err) throw err;
+				if (err) fs.writeFile('markovcorpus2.txt', backup, (err) => {
+					if (err) fs.writeFile('markovcorpus3.txt', backup, (err) => {
+						if (err) throw err;
+					});
+				});
 			});
 		}
 		markov.addData(messagedata)
