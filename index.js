@@ -36,7 +36,8 @@ let messagedata = [];
 let isMarkov = false;
 let markov_probability = 5;
 
-let messagecount = 0;
+let messagecount = parseInt(fs.readFileSync('./msgcount.txt',{encoding:'utf8', flag:'r'}));
+let message_threshold = 50;
 let artistpick;
 let markov_channel;
 
@@ -61,10 +62,15 @@ client.once('ready', () => {
 	//periodically change the artist the bot is "listening" to 
 	setInterval(() => {
 		let importdata = fs.readFileSync('./markovcorpus.txt',{encoding:'utf8', flag:'r'});
+		let importdata2= fs.readFileSync('./markovcorpus2.txt',{encoding:'utf8', flag:'r'});
 		artistpick = artists[Math.floor(Math.random()*artists.length)]
 		client.user.setActivity(artistpick, { type: 'LISTENING' });
-		console.log(`markov chain backed up!`);
+		console.log(`MC markov chain backed up!`);
 		fs.writeFile('markovbackup.txt', importdata, (err) => {
+			if (err) throw err;
+		});
+		console.log(`MF markov chain backed up!`);
+		fs.writeFile('markovbackup1.txt', importdata2, (err) => {
 			if (err) throw err;
 		});
 	}, 5*60*1000);
@@ -110,18 +116,39 @@ client.on('messageCreate', async message =>{
 			markov_probability = args;
 			message.channel.send(`probability set to ${markov_probability}!`)
 		}
+		if(message.content.includes("set_msgcount")){
+			let args = message.content.split(' ')[1];
+			try{
+				message_threshold = args;
+				message.channel.send(`random message threshold set!`);
+			}catch(err){
+				message.channel.send(`error! invalid value`);
+			}
+		}
 	}
 	//takes the message and splits it into an array.
 	if(message.guildId == MC&& message.channelId != "890349764514832394" && message.channelId != "885646595889180733"){
 		if(message.author.bot){return}
 		//decreasing cooldown when people are talking
+		try{
+			messagecount = parseInt(fs.readFileSync('./msgcount.txt',{encoding:'utf8', flag:'r'}));
+		}catch(err){
+			messagecount = 0;
+		}
+
 		messagecount += 1;
+		fs.writeFile('msgcount.txt', messagecount.toString(), (err) => {
+			if (err) throw err;
+		});
 		console.log(chalk.redBright(messagecount));
-		if(messagecount == 100){
-			let artistImage = new Discord.MessageEmbed().setTitle(`I am currently listening to: **__${artistpick}!__** What is your opinion on this artist?`).setFooter("🗿 Yours truly, MoyaiBot 🗿");
+		if(messagecount >= message_threshold){
+			let artistImage = new Discord.MessageEmbed().setTitle(`I am currently listening to: **__${artistpick}!__** What is your opinion on this artist?`).setFooter({text: "🗿 Yours truly, MoyaiBot 🗿"});
 			client.channels.cache.get(MCgeneral).send({embeds: [artistImage]})
 			console.log(chalk.redBright("random message sent!"));
 			messagecount = 0;
+			fs.writeFile('msgcount.txt', messagecount.toString(), (err) => {
+				if (err) throw err;
+			});
 		}
 		let words = message.content
 		let attach = message.attachments.first();
@@ -146,11 +173,7 @@ client.on('messageCreate', async message =>{
 			message.channel.send("error while getting corpus, using backup")
 			markov.import(JSON.parse(backup));
 			fs.writeFile('markovcorpus.txt', backup, (err) => {
-				if (err) fs.writeFile('markovcorpus2.txt', backup, (err) => {
-					if (err) fs.writeFile('markovcorpus3.txt', backup, (err) => {
-						if (err) throw err;
-					});
-				});
+				if (err) throw err;
 			});
 		}
 		markov.addData(messagedata)
