@@ -16,7 +16,7 @@ client.commands = new Collection();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 let artistlist = fs.readFileSync('./tracklist.txt', {encoding:'utf8', flag:'r'})
 let artists = artistlist.split(", ")
-const markov = new Markov({ stateSize: 2 })
+const markov = new Markov({ stateSize: 1 })
 const markov2 = new Markov({ stateSize: 2 })
 
 for (const file of commandFiles) {
@@ -73,11 +73,11 @@ client.once('ready', () => {
 		fs.writeFile('markovbackup1.txt', importdata2, (err) => {
 			if (err) throw err;
 		});
-	}, 5*60*1000);
+	}, 10*60*1000);
 	setInterval(() =>{
 		client.channels.cache.get(listens).send(`i'm listening to ${artistpick}`)
 	}, 20*60*1000)
-	// setInterval(() => {
+	// setInterval(() => {"
 	// 	client.channels.cache.get(modlog).send('<@&885637749619687465> its time to bump')
 	// }, 125*60*1000);
 	setInterval(()=>{
@@ -132,18 +132,22 @@ client.on('messageCreate', async message =>{
 		//decreasing cooldown when people are talking
 		try{
 			messagecount = parseInt(fs.readFileSync('./msgcount.txt',{encoding:'utf8', flag:'r'}));
-		}catch(err){
+		}catch(err){ 
 			messagecount = 0;
 		}
-
+		if(messagecount == NaN){
+			//message.channel.send(`${message.author} you motherfucker. you fucked up something in my code that is responsible for keeping track of the number of messages before i send one of those "what is your opinion on this artist?" messages. fuck you go fuck yourself now desmond has to fix it dont you feel bad for him`);
+			messagecount = 0;
+		}
 		messagecount += 1;
 		fs.writeFile('msgcount.txt', messagecount.toString(), (err) => {
 			if (err) throw err;
 		});
 		console.log(chalk.redBright(messagecount));
-		if(messagecount >= message_threshold){
+		if(messagecount > message_threshold){
 			let artistImage = new Discord.MessageEmbed().setTitle(`I am currently listening to: **__${artistpick}!__** What is your opinion on this artist?`).setFooter({text: "🗿 Yours truly, MoyaiBot 🗿"});
-			client.channels.cache.get(MCgeneral).send({embeds: [artistImage]})
+			//client.channels.cache.get(MCgeneral).send({embeds: [artistImage]})
+			message.channel.send({embeds: [artistImage]});
 			console.log(chalk.redBright("random message sent!"));
 			messagecount = 0;
 			fs.writeFile('msgcount.txt', messagecount.toString(), (err) => {
@@ -170,11 +174,16 @@ client.on('messageCreate', async message =>{
 			markov.import(JSON.parse(importdata))
 		} catch(err){
 			console.log("error while getting corpus, using backup")
-			message.channel.send("error while getting corpus, using backup")
-			markov.import(JSON.parse(backup));
-			fs.writeFile('markovcorpus.txt', backup, (err) => {
-				if (err) throw err;
-			});
+			/* message.channel.send("error while getting corpus, using backup")
+			if(backup.length<20 || importdata.length<20){
+				message.channel.send("the markov corpus is too small!")
+			}else{
+				markov.import(JSON.parse(backup));
+				fs.writeFile('markovcorpus.txt', backup, (err) => {
+					if (err) throw err;
+				});
+			}*/
+
 		}
 		markov.addData(messagedata)
 		fs.writeFile('markovcorpus.txt', JSON.stringify(markov.export()), (err) => {
@@ -208,6 +217,19 @@ client.on('messageCreate', async message =>{
 				}
 			}
 		}
+		if(message.content.startsWith("m!") && message.content.includes("trigger")){
+			try{
+				const result = await markov.generate(options);
+				console.log(result);
+				console.log(chalk.blueBright(`min length: ${randlength}, min ref amount: ${randref}`));
+				client.channels.fetch(markov_channel)
+				.then(channel => channel.send(result.string))
+			}
+			catch(error){
+				console.log(error);
+				message.channel.send("error!!!! :(");
+			}
+		}
 	}
 	if(message.guildId == MF){
 		if(message.author.bot){return}
@@ -227,21 +249,19 @@ client.on('messageCreate', async message =>{
 		console.log(messagedata);
 		let backup2 = fs.readFileSync('./markovbackup2.txt',{encoding:'utf8', flag:'r'});
 		let importdata2 = fs.readFileSync('./markovcorpus2.txt',{encoding:'utf8', flag:'r'});
-		fs.writeFile('markovbackup2.txt', backup2, (err) => {
-			if (err) throw err;
-		});
 		try{
 			markov2.import(JSON.parse(importdata2))
-			fs.writeFile('markovbackup2.txt', importdata2, (err) => {
-				if (err) throw err;
-			});
 		} catch(err){
 			console.log("error while getting corpus, using backup")
 			message.channel.send("error while getting corpus, using backup")
-			markov2.import(JSON.parse(backup2));
-			fs.writeFile('markovcorpus2.txt', backup2, (err) => {
-				if (err) throw err;
-			});
+			/*if(backup2.length<20 || importdata2.length<20){
+				message.channel.send("the markov corpus is too small!")
+			}else{
+				markov2.import(JSON.parse(backup2));
+				fs.writeFile('markovcorpus2.txt', backup2, (err) => {
+					if (err) throw err;
+				});
+			}*/
 		}
 		markov2.addData(messagedata)
 		fs.writeFile('markovcorpus2.txt', JSON.stringify(markov2.export()), (err) => {
@@ -272,6 +292,19 @@ client.on('messageCreate', async message =>{
 					console.log(error);
 					message.channel.send("error!!!! :(");
 				}
+			}
+		}
+		if(message.content.startsWith("m!") && message.content.includes("trigger")){
+			try{
+				const result = await markov2.generate(options);
+				console.log(result);
+				console.log(chalk.blueBright(`min length: ${randlength}, min ref amount: ${randref}`));
+				client.channels.fetch(markov_channel)
+				.then(channel => channel.send(result.string))
+			}
+			catch(error){
+				console.log(error);
+				message.channel.send("error!!!! :(");
 			}
 		}
 	}

@@ -57,7 +57,7 @@ module.exports = {
             }
         } catch(err){
             console.log(err);
-            await interaction.editReply(`could not find song or artist!`);
+            await interaction.editReply(`could not find lyrics to ${artist} - ${song}! `);
         }
 
   },

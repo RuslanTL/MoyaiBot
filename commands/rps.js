@@ -16,7 +16,7 @@ module.exports = {
 
 		// If the player types something that's not a valid choice
 		if (choices.indexOf(userChoice.toLowerCase()) === -1) {
-			await interaction.reply('Must enter Rock, Paper, or Scissors!');
+			await interaction.reply(`Must enter Rock, Paper, or Scissors! Player chose: ${userChoice}`);
 			return;
 		}
 
